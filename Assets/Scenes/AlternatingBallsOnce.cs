@@ -2,16 +2,16 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 
-public class fixation : MonoBehaviour
+public class AlternatingBallsOnce : MonoBehaviour
 {
 
-    public FixationLogger flogger;  // Make sure it's public or serialized
+    // public XREliteFullLogger logger;  // Make sure it's public or serialized
     public GameObject ball1;
     public GameObject ball2;
 
     private Renderer rend1, rend2;
     private Material mat1, mat2;
-    public float radius = 1f;
+    public float radius = 2f;
     public float duration = 8f;
 
     void Start()
@@ -23,6 +23,8 @@ public class fixation : MonoBehaviour
 
         // Place balls in front of camera
         Transform cam = Camera.main.transform;
+        ball1.transform.position = cam.position + cam.forward * 2 + cam.right * -0.5f;
+        ball2.transform.position = cam.position + cam.forward * 2 + cam.right * 0.5f;
 
         // Initial visibility
         SetAlpha(mat1, 1f); // ball1 visible
@@ -37,7 +39,7 @@ public class fixation : MonoBehaviour
         }
 
         // Camera cam = Camera.main;
-       if (cam != null)
+        if (cam != null)
         {
             // Generate a random point within a circle (not just the edge) in front of the camera
             Vector2 randomCircle = Random.insideUnitCircle * radius;
@@ -62,7 +64,7 @@ public class fixation : MonoBehaviour
 
     void LoadNextScene()
     {
-        flogger.SaveToCSV();
+        // logger.SaveToCSV();
         SceneManager.LoadScene("EyeTrackerreal");
     }
 

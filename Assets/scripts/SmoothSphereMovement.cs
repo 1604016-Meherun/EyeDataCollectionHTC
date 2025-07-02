@@ -6,7 +6,7 @@ public class SmoothSphereMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float radius = 1.5f;
-    public XREliteFullLogger logger;  // Make sure it's public or serialized
+    public SmoothPursuitLogger sslogger;  // Make sure it's public or serialized
     public float speed = 0.5f; // Movement speed
 
     [Header("Scene Settings")]
@@ -48,7 +48,7 @@ public class SmoothSphereMovement : MonoBehaviour
     private IEnumerator RunSceneForDuration()
     {
         yield return new WaitForSeconds(duration);
-        logger.SaveToCSV();
+        sslogger.SaveToCSV();
         SceneManager.LoadScene("EyeTrackerreal");
     }
 }

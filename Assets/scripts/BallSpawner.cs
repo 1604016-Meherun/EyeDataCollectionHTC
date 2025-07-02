@@ -27,7 +27,7 @@ public class BallSpawner : MonoBehaviour
     private float elapsedTime;
     private bool isLeft = true;
     private bool isUp = true;
-    public XREliteFullLogger logger;
+    public SaccadeLogger slogger;
 
     private void Start()
     {
@@ -51,7 +51,7 @@ public class BallSpawner : MonoBehaviour
             yield return new WaitForSeconds(switchInterval);
             elapsedTime += switchInterval;
         }
-        logger.SaveToCSV();
+        slogger.SaveToCSV();
         saccadeSphere.SetActive(false);
         SceneManager.LoadScene("EyeTrackerreal");
     }
