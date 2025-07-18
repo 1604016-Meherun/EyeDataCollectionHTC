@@ -10,70 +10,60 @@ public class SceneLoader : MonoBehaviour
     public Button smoothPursuitButton;
     public Button saccadeButton;
 
-    private Dictionary<string, Button> sceneButtonMap;
+    private static readonly string[] sceneNames = { "Fixation", "smoothpursuit", "saccade" };
+    private static readonly string lastSceneKey = "LastScene";
     private static HashSet<string> completedScenes = new HashSet<string>();
 
     void Start()
     {
         // Map buttons to scene names
-        sceneButtonMap = new Dictionary<string, Button>
+        var sceneButtonMap = new Dictionary<string, Button>(3)
         {
-            { "Fixation", fixationButton },
-            { "smoothpursuit", smoothPursuitButton },
-            { "saccade", saccadeButton }
+            { sceneNames[0], fixationButton },
+            { sceneNames[1], smoothPursuitButton },
+            { sceneNames[2], saccadeButton }
         };
 
-        // Check PlayerPrefs for last played scene
-        string lastScene = PlayerPrefs.GetString("LastScene", "");
-        if (!string.IsNullOrEmpty(lastScene))
+        // Load last completed scene only if not already in set
+        string lastScene = PlayerPrefs.GetString(lastSceneKey, "");
+        if (!string.IsNullOrEmpty(lastScene) && completedScenes.Add(lastScene))
         {
-            completedScenes.Add(lastScene);
-            PlayerPrefs.DeleteKey("LastScene");
+            PlayerPrefs.DeleteKey(lastSceneKey);
         }
 
         // Disable completed scene buttons and color red
-        foreach (var kvp in sceneButtonMap)
+        foreach (var name in sceneNames)
         {
-            if (completedScenes.Contains(kvp.Key))
+            if (completedScenes.Contains(name))
             {
-                kvp.Value.interactable = false;
-                kvp.Value.GetComponent<Image>().color = Color.red;
+                var btn = sceneButtonMap[name];
+                btn.interactable = false;
+                btn.image.color = Color.red;
             }
         }
 
-        // Check if all 3 scenes are completed
-        if (completedScenes.Count >= 3)
+        // If all scenes completed, clear and quit
+        if (completedScenes.Count == sceneNames.Length)
         {
-            Debug.Log("All scenes completed. Quitting and clearing PlayerPrefs...");
-            PlayerPrefs.DeleteAll(); // reset saved data
-            completedScenes.Clear(); // reset runtime memory
+            PlayerPrefs.DeleteAll();
+            completedScenes.Clear();
 
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
-            Application.Quit(); // will trigger restart if wrapped externally
+            Application.Quit();
 #endif
         }
     }
 
-    public void sceneChanger_fixation()
-    {
-        PlayerPrefs.SetString("LastScene", "Fixation");
-        PlayerPrefs.Save();
-        SceneManager.LoadScene("Fixation");
-    }
+    public void sceneChanger_fixation() => ChangeScene(sceneNames[0]);
+    public void sceneChanger_smooth_pursuit() => ChangeScene(sceneNames[1]);
+    public void sceneChanger_saccade() => ChangeScene(sceneNames[2]);
 
-    public void sceneChanger_smooth_pursuit()
+    private void ChangeScene(string sceneName)
     {
-        PlayerPrefs.SetString("LastScene", "smoothpursuit");
+        PlayerPrefs.SetString(lastSceneKey, sceneName);
         PlayerPrefs.Save();
-        SceneManager.LoadScene("smoothpursuit");
-    }
-
-    public void sceneChanger_saccade()
-    {
-        PlayerPrefs.SetString("LastScene", "saccade");
-        PlayerPrefs.Save();
-        SceneManager.LoadScene("saccade");
+        SceneManager.LoadScene(sceneName);
     }
 }

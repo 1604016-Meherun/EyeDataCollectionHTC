@@ -2067,7 +2067,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1580792044
 Transform:
   m_ObjectHideFlags: 0
@@ -3558,7 +3558,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   radius: 1.5
   sslogger: {fileID: 1291770161}
-  speed: 0.5
+  speed: 0.25
   duration: 30
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

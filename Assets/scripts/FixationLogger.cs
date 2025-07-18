@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System;
 using UnityEngine.SceneManagement;
-using UnityEngine.UIElements;
+using System.Text;
 
 public class FixationLogger : MonoBehaviour
 {
-
-    List<dataStructure.FrameData> allFrames = new List<dataStructure.FrameData>();
-    // private static List<FrameData> allData = new(); // static to persist across scenes
+    private List<dataStructure.FrameData> allFrames;
     private string filePath;
     private float startTime;
     public string fileName;
@@ -19,21 +17,21 @@ public class FixationLogger : MonoBehaviour
     public Transform rightEyeTransform;
     public Transform centerEyeTransform;
 
-    private string csvHeader = "SceneName,ElapsedTime," +
-                               "LeftPosX,LeftPosY,LeftPosZ,LeftRotX,LeftRotY,LeftRotZ,LeftRotW,LeftDirX,LeftDirY,LeftDirZ," +
-                               "RightPosX,RightPosY,RightPosZ,RightRotX,RightRotY,RightRotZ,RightRotW,RightDirX,RightDirY,RightDirZ," +
-                               "CenterPosX,CenterPosY,CenterPosZ,CenterRotX,CenterRotY,CenterRotZ,CenterRotW,CenterDirX,CenterDirY,CenterDirZ";
+    private const string csvHeader = "SceneName,ElapsedTime," +
+        "LeftPosX,LeftPosY,LeftPosZ,LeftRotX,LeftRotY,LeftRotZ,LeftRotW,LeftDirX,LeftDirY,LeftDirZ," +
+        "RightPosX,RightPosY,RightPosZ,RightRotX,RightRotY,RightRotZ,RightRotW,RightDirX,RightDirY,RightDirZ," +
+        "CenterPosX,CenterPosY,CenterPosZ,CenterRotX,CenterRotY,CenterRotZ,CenterRotW,CenterDirX,CenterDirY,CenterDirZ";
 
+    private static readonly StringBuilder sb = new StringBuilder(4096);
 
     void Awake()
     {
-        // Only allow one logger to persist
         if (FindObjectsOfType<FixationLogger>().Length > 1)
         {
             Destroy(gameObject);
             return;
         }
-        DontDestroyOnLoad(this.gameObject);
+        DontDestroyOnLoad(gameObject);
 
         if (string.IsNullOrEmpty(fileName))
             fileName = "EyeLog";
@@ -41,23 +39,16 @@ public class FixationLogger : MonoBehaviour
         string guid = Guid.NewGuid().ToString();
         string fileNameNew = $"{fileName}_{DateTime.Now:yyyyMMdd_HHmmss}_{guid}.csv";
 
-        if (string.IsNullOrEmpty(Application.persistentDataPath))
-        {
-            Debug.LogError("⚠️ Application.persistentDataPath is null or empty. Using current directory.");
-            filePath = Path.Combine(Directory.GetCurrentDirectory(), fileNameNew);
-        }
-        else
-        {
-            filePath = Path.Combine(Application.persistentDataPath, fileNameNew);
-        }
+        filePath = string.IsNullOrEmpty(Application.persistentDataPath)
+            ? Path.Combine(Directory.GetCurrentDirectory(), fileNameNew)
+            : Path.Combine(Application.persistentDataPath, fileNameNew);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"📦 [Awake] Logging to: {filePath}");
+#endif
+
+        allFrames = new List<dataStructure.FrameData>(10000); // Preallocate for efficiency
     }
-    // Subscribe to scene unload event to save data
-    // This ensures data is saved when the scene is unloaded
-    // This is useful for multi-scene setups where data needs to persist
-    // across scene transitions
-    // This is useful for multi-scene setups where data needs to persist
 
     void OnEnable()
     {
@@ -77,8 +68,11 @@ public class FixationLogger : MonoBehaviour
     void Start()
     {
         startTime = Time.time;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"📦 Logging to: {filePath}");
+#endif
     }
+
     void Update()
     {
         if (!leftEyeTransform || !rightEyeTransform || !centerEyeTransform) return;
@@ -86,30 +80,28 @@ public class FixationLogger : MonoBehaviour
         float t = Time.time - startTime;
         string scene = SceneManager.GetActiveScene().name;
 
-        dataStructure.FrameData current = new dataStructure.FrameData(
+        allFrames.Add(new dataStructure.FrameData(
             scene,
             t,
             new dataStructure.ObjectData(leftEyeTransform),
             new dataStructure.ObjectData(rightEyeTransform),
             new dataStructure.ObjectData(centerEyeTransform)
-        );
-
-        allFrames.Add(current);
+        ));
     }
 
     public void SaveToCSV()
     {
         if (allFrames.Count == 0) return;
 
-        using (StreamWriter writer = new StreamWriter(filePath))
-        {
-            writer.WriteLine(csvHeader);
-            foreach (var frame in allFrames)
-                writer.WriteLine(frame.ToCsvString());
-        }
+        sb.Clear();
+        sb.AppendLine(csvHeader);
+        foreach (var frame in allFrames)
+            sb.AppendLine(frame.ToCsvString());
 
+        File.WriteAllText(filePath, sb.ToString());
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"✅ All scene data saved to {filePath}");
+#endif
     }
-    
-
 }

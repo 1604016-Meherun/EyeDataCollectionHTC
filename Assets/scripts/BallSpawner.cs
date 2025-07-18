@@ -27,7 +27,11 @@ public class BallSpawner : MonoBehaviour
     private float elapsedTime;
     private bool isLeft = true;
     private bool isUp = true;
-    public SaccadeLogger slogger;
+    [SerializeField] private SaccadeLogger slogger;
+
+    private Transform camTransform;
+    private Vector3 basePos;
+    private const float distanceFromCamera = 4f;
 
     private void Start()
     {
@@ -38,6 +42,13 @@ public class BallSpawner : MonoBehaviour
         }
 
         saccadeSphere.transform.localScale = Vector3.one * sphereScale;
+        camTransform = Camera.main != null ? Camera.main.transform : null;
+        if (camTransform == null)
+        {
+            Debug.LogError("Main Camera not found!");
+            return;
+        }
+        basePos = camTransform.position + camTransform.forward * distanceFromCamera;
         StartCoroutine(SaccadePattern());
     }
 
@@ -51,7 +62,8 @@ public class BallSpawner : MonoBehaviour
             yield return new WaitForSeconds(switchInterval);
             elapsedTime += switchInterval;
         }
-        slogger.SaveToCSV();
+        if (slogger != null)
+            slogger.SaveToCSV();
         saccadeSphere.SetActive(false);
         SceneManager.LoadScene("EyeTrackerreal");
     }
@@ -59,14 +71,6 @@ public class BallSpawner : MonoBehaviour
     private void MoveSphere()
     {
         float t = Time.time;
-        // Get the main camera's transform
-        Transform cam = Camera.main.transform;
-
-        // Set a distance in front of the camera
-        float distanceFromCamera = 4f;
-
-        // Calculate base position in front of the camera
-        Vector3 basePos = cam.position + cam.forward * distanceFromCamera;
 
         // Calculate saccade offsets
         float z = Mathf.Sin(t * zSpeed) * zAmplitude;
@@ -74,16 +78,12 @@ public class BallSpawner : MonoBehaviour
         float y = (isUp ? verticalDistance : -verticalDistance) + Random.Range(-verticalJitter, verticalJitter);
 
         // Offset from base position in camera's local space
-        Vector3 offset = cam.right * x + cam.up * y + cam.forward * z;
-
-        Vector3 nextPos = basePos + offset;
-
-        // Vector3 nextPos = new Vector3(x, y, z);
-        saccadeSphere.transform.position = nextPos;
+        Vector3 offset = camTransform.right * x + camTransform.up * y + camTransform.forward * z;
+        saccadeSphere.transform.position = basePos + offset;
 
         isLeft = !isLeft;
         isUp = !isUp;
 
-        Debug.Log($"Sphere saccade jump to: {nextPos}");
+        // Debug.Log("Sphere saccade jump to: " + saccadeSphere.transform.position);
     }
 }
