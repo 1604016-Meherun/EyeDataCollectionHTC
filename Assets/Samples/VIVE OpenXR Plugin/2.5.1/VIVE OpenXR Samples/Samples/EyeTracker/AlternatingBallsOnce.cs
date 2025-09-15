@@ -17,6 +17,15 @@ public class AlternatingBallsOnce : MonoBehaviour
     private static readonly int DstBlendProp = Shader.PropertyToID("_DstBlend");
     private static readonly int ZWriteProp = Shader.PropertyToID("_ZWrite");
 
+    // Add color sequence and index
+    private Color[] colorSequence = new Color[] {
+        new Color(0, 0, 1, 1), // blue
+        new Color(1, 1, 0, 1), // yellow
+        new Color(1, 0, 0, 1)  // red
+    };
+    private int colorIndexBall1 = 0;
+    private int colorIndexBall2 = 0;
+
     void Start()
     {
         if (ball1 == null || ball2 == null)
@@ -49,6 +58,10 @@ public class AlternatingBallsOnce : MonoBehaviour
         SetAlpha(mat1, 1f);
         SetAlpha(mat2, 0f);
 
+        // Set initial colors
+        SetColor(mat1, colorSequence[colorIndexBall1]);
+        SetColor(mat2, colorSequence[colorIndexBall2]);
+
         StartCoroutine(AlternateFor30Seconds());
         Invoke(nameof(LoadNextScene), duration);
     }
@@ -66,16 +79,46 @@ public class AlternatingBallsOnce : MonoBehaviour
             yield return new WaitForSeconds(10f);
             elapsed += 10f;
 
+            // Fade out ball1, fade in ball2
             yield return Fade(mat1, 1f, 0f, 2f);
             yield return Fade(mat2, 0f, 1f, 2f);
 
-            SetColor(mat2, 1, 0, 0, 1); yield return new WaitForSeconds(1f); // red
-            SetColor(mat2, 1, 1, 0, 1); yield return new WaitForSeconds(1f); // yellow
-            SetColor(mat2, 0, 0, 1, 1); yield return new WaitForSeconds(1f); // blue
+            // Change ball2 color in sequence
+            colorIndexBall2 = (colorIndexBall2 + 1) % colorSequence.Length;
+            SetColor(mat2, colorSequence[colorIndexBall2]);
+
+            yield return new WaitForSeconds(1f);
+
+            colorIndexBall2 = (colorIndexBall2 + 1) % colorSequence.Length;
+            SetColor(mat2, colorSequence[colorIndexBall2]);
+
+            yield return new WaitForSeconds(1f);
+
+            colorIndexBall2 = (colorIndexBall2 + 1) % colorSequence.Length;
+            SetColor(mat2, colorSequence[colorIndexBall2]);
+
+            yield return new WaitForSeconds(1f);
             elapsed += 5f;
 
+            // Fade out ball2, fade in ball1
             yield return Fade(mat2, 1f, 0f, 2f);
             yield return Fade(mat1, 0f, 1f, 2f);
+
+            // Change ball1 color in sequence
+            colorIndexBall1 = (colorIndexBall1 + 1) % colorSequence.Length;
+            SetColor(mat1, colorSequence[colorIndexBall1]);
+
+            yield return new WaitForSeconds(1f);
+
+            colorIndexBall1 = (colorIndexBall1 + 1) % colorSequence.Length;
+            SetColor(mat1, colorSequence[colorIndexBall1]);
+
+            yield return new WaitForSeconds(1f);
+
+            colorIndexBall1 = (colorIndexBall1 + 1) % colorSequence.Length;
+            SetColor(mat1, colorSequence[colorIndexBall1]);
+
+            yield return new WaitForSeconds(1f);
             elapsed += 4f;
         }
     }
@@ -101,7 +144,6 @@ public class AlternatingBallsOnce : MonoBehaviour
         c.a = alpha;
         mat.SetColor(ColorProp, c);
 
-        // Only set render properties once per material instance
         mat.SetFloat(ModeProp, 2);
         mat.SetInt(SrcBlendProp, (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
         mat.SetInt(DstBlendProp, (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
@@ -112,9 +154,9 @@ public class AlternatingBallsOnce : MonoBehaviour
         mat.renderQueue = 3000;
     }
 
-    void SetColor(Material mat, float r, float g, float b, float a)
+    // Overload for Color
+    void SetColor(Material mat, Color color)
     {
-        Color c = new Color(r, g, b, a);
-        mat.SetColor(ColorProp, c);
+        mat.SetColor(ColorProp, color);
     }
 }
